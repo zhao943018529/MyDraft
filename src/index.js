@@ -1,6 +1,6 @@
 import React from 'react';
 import {render} from 'react-dom';
-import {Editor,EditorState,RichUtils,CompositeDecorator,AtomicBlockUtils} from 'draft-js';
+import {Editor,EditorState,RichUtils,CompositeDecorator,AtomicBlockUtils,convertToRaw} from 'draft-js';
 import LinkComponent from './LinkComponent';
 import MediaBlock from './MediaBlock';
 const styleMap = {
@@ -21,7 +21,10 @@ class App extends React.Component{
 			component:LinkComponent
 		}]);
 		this.state = {editorState:EditorState.createEmpty(decorator)};
-		this.onChange = (editorState,callback) =>this.setState({editorState},()=>callback&&callback());
+		this.onChange = (editorState,callback) =>{
+			this.setState({editorState},()=>callback&&callback())
+		};
+
 		this.focus=()=>this.editor.focus();
 		this.toggleBlockType = this._toggleBlockType.bind(this);
 		this.toggleInlineStyle =this._toggleInlineStyle.bind(this);
@@ -154,7 +157,16 @@ class App extends React.Component{
 			          </div>
 					</div>
 				<div className="item">
-
+					<Editor
+			            blockStyleFn={getBlockStyle}
+			            customStyleMap={styleMap}
+			            editorState={editorState}
+			            placeholder="ccccc"
+			            blockRendererFn={myMediaBlockRender}
+			            spellCheck={true}
+			            ref={(ref)=>this.show=ref}
+			            readOnly={true}
+			          />
 				</div>
 				<div className="link-panel" ref={(ref)=>this.link=ref}>
 					<p><label htmlFor="mutability" >Mutability:<select name="mutability" id="mutability">

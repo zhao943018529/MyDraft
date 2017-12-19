@@ -3,6 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Document</title>
+	<link rel="stylesheet" href="./css/font-awesome.min.css">
 </head>
 <style type="text/css">
 	*{
@@ -11,7 +12,7 @@
 	}
 
 	.container{
-		width: 420px;
+		width: 60%;
 		margin: 50px auto;
 		background: #fff;
     	border: 1px solid #ddd;
@@ -75,8 +76,27 @@
 	.link-open{
 		display: block;
 	}
+
+	.editor-control{
+		padding: 4px 6px;
+    	display: inline-block;
+    	border-right: 2px dashed #7cc30b;
+	}
+
+	.editor-item{
+	margin-right: 5px;
+    color: gray;
+    width: 18px;
+    line-height: 18px;
+    text-align: center;
+	}
+
+	.editor-active{
+		color: #1200fe;
+	}
 </style>
 <body>
+	<i class="fa fa-address-book" aria-hidden="true"></i>
 	<div id="root"></div>
 	<script type="text/javascript" src="./bundle.js"></script>
 </body>

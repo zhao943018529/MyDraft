@@ -5,7 +5,7 @@ module.exports={
 	context: __dirname,
 	devtool:'source-map',
 	entry:{
-		app:'./src/index'
+		app:'./src/app'
 	},
 	output:{
 		publicPath:'/',
