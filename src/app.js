@@ -29,6 +29,27 @@ class App extends React.Component{
 		this.promptForLink = this._promptForLink.bind(this);
 		this.confirmLink = this._confirmLink.bind(this);
 		this.onLinkInputKeyDown=this._onLinkInputKeyDown.bind(this);
+		this.getImage = this._getImage.bind(this);
+		this.openFileBrowser = this._openFileBrowser.bind(this);
+	}
+
+	_getImage(e){
+		e.preventDefault();
+		let input =this.file;
+var url = input.value;
+var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+if (input.files && input.files[0]&& (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
+    var reader = new FileReader();
+
+    reader.onload = function (e) {
+        console.log(e.target.result);
+    }
+    reader.readAsDataURL(input.files[0]);
+}
+	}
+
+	_openFileBrowser(){
+		this.file.click();
 	}
 
 	_onLinkInputKeyDown(e){
@@ -120,6 +141,7 @@ class App extends React.Component{
 					<InlineStyleControl editorState={editorState} onToggle={this.toggleInlineStyle}/>
 					<BlockStyleControl  editorState={editorState} onToggle={this.toggleBlockType}/>
 					<CustomStyleControl editorState={editorState} onToggle={this.promptForLink}/>
+					<button onClick={this.openFileBrowser}>insertImage</button>
 				</div>
 				<div className={className} onClick={this.focus}>
 					<Editor
@@ -131,7 +153,8 @@ class App extends React.Component{
 						handleKeyCommand={this.handleKeyCommand}
 					/>
 				</div>
-				{linkTip}	
+				{linkTip}
+				<input type="file" name="file" onChange={this.getImage} className="inputfile" ref={(ref)=>this.file=ref}/>	
 			</div>
 			);
 	}
