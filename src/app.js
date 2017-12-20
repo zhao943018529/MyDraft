@@ -2,7 +2,7 @@ import React from 'react';
 import {render} from 'react-dom';
 import {EditorState,Editor,RichUtils} from 'draft-js';
 import InlineStyleControl from './components/InlineStyleControl';
-
+import BlockStyleControl from './components/BlockStyleControl';
 
 class App extends React.Component{
 
@@ -26,14 +26,14 @@ class App extends React.Component{
 	}
 
 	_toggleInlineStyle(inlineStyle) {
-		this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle));
+		this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle),()=>this.focus());
 	}
 
 	_toggleBlockType(blockType) {
 		this.onChange(RichUtils.toggleBlockType(
 			this.state.editorState,
 			blockType
-		));
+		),()=>this.focus());
 	}
 
 	render(){
@@ -49,6 +49,7 @@ class App extends React.Component{
 			<div className="container">
 				<div className="operator">
 					<InlineStyleControl editorState={editorState} onToggle={this.toggleInlineStyle}/>
+					<BlockStyleControl  editorState={editorState} onToggle={this.toggleBlockType}/>
 				</div>
 				<div className={className} onClick={this.focus}>
 					<Editor

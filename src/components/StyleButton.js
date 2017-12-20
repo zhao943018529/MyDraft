@@ -16,9 +16,10 @@ export default class StyleButton extends React.Component{
 		if(this.props.active){
 			className+=' editor-active';
 		}
+		 let label = this.props.className?(<i className={this.props.className} aria-hidden="true"></i>):this.props.label;
 		return (
-			<span onMouseDown={this.onToggle} className={className}>
-				<i className={this.props.className} aria-hidden="true"></i>
+			<span onMouseDown={this.onToggle} className={className} title={this.props.label}>
+				{label}
 			</span>
 			);
 	}
