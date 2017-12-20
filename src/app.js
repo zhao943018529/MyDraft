@@ -1,19 +1,72 @@
 import React from 'react';
 import {render} from 'react-dom';
-import {EditorState,Editor,RichUtils} from 'draft-js';
+import {EditorState,Editor,RichUtils,CompositeDecorator} from 'draft-js';
 import InlineStyleControl from './components/InlineStyleControl';
 import BlockStyleControl from './components/BlockStyleControl';
+import CustomStyleControl from './components/CustomStyleControl';
+import LinkComponent from './components/LinkComponent';
+import LinkStrategy from './modify/LinkStrategy';
 
 class App extends React.Component{
 
 	constructor(props){
 		super(props);
-		this.state= {editorState:EditorState.createEmpty()};
+		const decorator = new CompositeDecorator([{
+			strategy:LinkStrategy,
+			component:LinkComponent
+		}])
+		this.state = {
+			editorState: EditorState.createEmpty(decorator),
+			showURLInput: false,
+			urlValue: ''
+		};
 		this.onChange=(editorState,callback)=>this.setState({editorState},callback&&callback());
 		this.handleKeyCommand = this._handleKeyCommand.bind(this);
 		this.toggleInlineStyle = this._toggleInlineStyle.bind(this);
 		this.toggleBlockType = this._toggleBlockType.bind(this);
 		this.focus=()=>this.editor.focus();
+		this.onURLChange = (e) => this.setState({urlValue: e.target.value});
+		this.promptForLink = this._promptForLink.bind(this);
+		this.confirmLink = this._confirmLink.bind(this);
+		this.onLinkInputKeyDown=this._onLinkInputKeyDown.bind(this);
+	}
+
+	_onLinkInputKeyDown(e){
+		if(e.which===13){
+			this._confirmLink(e);
+		}
+	}
+
+	_confirmLink(e){
+		e.preventDefault();
+		let {editorState,urlValue} =this.state;
+		let contentState = editorState.getCurrentContent();
+		let contentWithEntity = contentState.createEntity('LINK','IMMUTABLE',{url:urlValue});
+		let entityKey = contentWithEntity.getLastCreatedEntityKey();
+		let newEditorState = EditorState.set(editorState,{currentContent:contentWithEntity});
+		this.setState({
+			editorState: RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey),
+			showURLInput: false,
+			urlValue: ''
+		});
+	}
+
+	_promptForLink() {
+		const {editorState} = this.state;
+		const selection = editorState.getSelection();
+		if(!selection.isCollapsed()){
+			let startKey = selection.getStartKey();
+			let startOffset = selection.getStartOffset();
+			let contentState = editorState.getCurrentContent();
+			let blockWithLinkBeginning = contentState.getBlockForKey(startKey);
+			let linkKey = blockWithLinkBeginning.getEntityAt(startOffset);
+			let url ='';
+			if(linkKey){
+				let linkInstance = contentState.getBlockForKey(linkKey);
+				url = linkInstance.getData().url;
+			}
+			this.setState({urlValue:url,showURLInput:true});
+		}
 	}
 
 	_handleKeyCommand(command, editorState) {
@@ -37,7 +90,7 @@ class App extends React.Component{
 	}
 
 	render(){
-		let {editorState} = this.state;
+		let {editorState,showURLInput,urlValue} = this.state;
 		let contentState = editorState.getCurrentContent();
 		let className = 'RichEditor-editor';
 		if(!contentState.hasText()){
@@ -45,11 +98,28 @@ class App extends React.Component{
 				className+=' RichEditor-hidePlaceholder';
 			}
 		}
+		let linkTip;
+		if(showURLInput){
+			linkTip=(
+				<div>
+                <input
+                  onChange={this.onURLChange}
+                  ref="url"
+                  type="text"
+                  value={urlValue}
+                  onKeyDown={this.onLinkInputKeyDown}
+                />
+                <button onMouseDown={this.confirmLink}>
+                  Confirm
+                </button>
+              </div>);
+		}
 		return (
 			<div className="container">
 				<div className="operator">
 					<InlineStyleControl editorState={editorState} onToggle={this.toggleInlineStyle}/>
 					<BlockStyleControl  editorState={editorState} onToggle={this.toggleBlockType}/>
+					<CustomStyleControl editorState={editorState} onToggle={this.promptForLink}/>
 				</div>
 				<div className={className} onClick={this.focus}>
 					<Editor
@@ -59,9 +129,9 @@ class App extends React.Component{
 						ref={(ref)=>this.editor=ref}
 						placeholder="Write your article..."
 						handleKeyCommand={this.handleKeyCommand}
-
 					/>
-				</div>	
+				</div>
+				{linkTip}	
 			</div>
 			);
 	}
