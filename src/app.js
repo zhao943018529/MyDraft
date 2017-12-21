@@ -1,11 +1,12 @@
 import React from 'react';
 import {render} from 'react-dom';
-import {EditorState,Editor,RichUtils,CompositeDecorator} from 'draft-js';
+import {EditorState,Editor,RichUtils,CompositeDecorator,AtomicBlockUtils} from 'draft-js';
 import InlineStyleControl from './components/InlineStyleControl';
 import BlockStyleControl from './components/BlockStyleControl';
 import CustomStyleControl from './components/CustomStyleControl';
 import LinkComponent from './components/LinkComponent';
 import LinkStrategy from './modify/LinkStrategy';
+import mediaBlockRenderer from './modify/MediaBlockRenderer';
 
 class App extends React.Component{
 
@@ -31,21 +32,30 @@ class App extends React.Component{
 		this.onLinkInputKeyDown=this._onLinkInputKeyDown.bind(this);
 		this.getImage = this._getImage.bind(this);
 		this.openFileBrowser = this._openFileBrowser.bind(this);
+		this.customTool = this._customTool.bind(this);
 	}
 
-	_getImage(e){
+	_getImage(e) {
 		e.preventDefault();
-		let input =this.file;
-var url = input.value;
-var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
-if (input.files && input.files[0]&& (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
-    var reader = new FileReader();
+		let input = this.file;
+		var url = input.value;
+		var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+		if (input.files && input.files[0] && (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
+			var reader = new FileReader();
 
-    reader.onload = function (e) {
-        console.log(e.target.result);
-    }
-    reader.readAsDataURL(input.files[0]);
-}
+			reader.onload = (e)=> {
+				input.value='';
+				let {editorState} = this.state;
+				let contentState = editorState.getCurrentContent();
+				let contentWithEntity = contentState.createEntity('IMAGE','IMMUTABLE',{src:e.target.result});
+				let entityKey = contentWithEntity.getLastCreatedEntityKey();
+				let newEditorState = EditorState.set(editorState,{currentContent:contentWithEntity});
+				this.setState({
+					editorState: AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, ' ')
+				},()=>setTimeout(()=>this.focus(),0));
+			}
+			reader.readAsDataURL(input.files[0]);
+		}
 	}
 
 	_openFileBrowser(){
@@ -83,10 +93,23 @@ if (input.files && input.files[0]&& (ext == "gif" || ext == "png" || ext == "jpe
 			let linkKey = blockWithLinkBeginning.getEntityAt(startOffset);
 			let url ='';
 			if(linkKey){
-				let linkInstance = contentState.getBlockForKey(linkKey);
+				let linkInstance = contentState.getEntity(linkKey);
 				url = linkInstance.getData().url;
 			}
 			this.setState({urlValue:url,showURLInput:true});
+		}
+	}
+
+	_customTool(style){
+		switch(style){
+			case 'LINK':
+				this._promptForLink();
+				break;
+			case 'IMAGE':
+				this._openFileBrowser();
+				break;
+				default:
+				break;
 		}
 	}
 
@@ -140,8 +163,7 @@ if (input.files && input.files[0]&& (ext == "gif" || ext == "png" || ext == "jpe
 				<div className="operator">
 					<InlineStyleControl editorState={editorState} onToggle={this.toggleInlineStyle}/>
 					<BlockStyleControl  editorState={editorState} onToggle={this.toggleBlockType}/>
-					<CustomStyleControl editorState={editorState} onToggle={this.promptForLink}/>
-					<button onClick={this.openFileBrowser}>insertImage</button>
+					<CustomStyleControl editorState={editorState} onToggle={this.customTool}/>
 				</div>
 				<div className={className} onClick={this.focus}>
 					<Editor
@@ -150,6 +172,7 @@ if (input.files && input.files[0]&& (ext == "gif" || ext == "png" || ext == "jpe
 						customStyleMap={styleMap}
 						ref={(ref)=>this.editor=ref}
 						placeholder="Write your article..."
+						blockRendererFn={mediaBlockRenderer}
 						handleKeyCommand={this.handleKeyCommand}
 					/>
 				</div>
